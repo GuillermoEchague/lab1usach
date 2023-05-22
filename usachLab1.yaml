@@ -3,12 +3,30 @@ Parameters:
   vpccidr:
     Type: String
     Default: 10.20.0.0/16
+    Description: "CIDR block for the VPC"
+    MinLength: 9
+    MaxLength: 18
+    AllowedPattern: "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})"
+    ConstraintDescription: "CIDR block must be in the format xxx.xxx.xxx.xxx/xx and have a length between 9 and 18."
+
   psharedacidr:
     Type: String
     Default: 10.20.0.0/22
+    Description: "CIDR block for the shared subnet A"
+    MinLength: 9
+    MaxLength: 18
+    AllowedPattern: "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})"
+    ConstraintDescription: "CIDR block must be in the format xxx.xxx.xxx.xxx/xx and have a length between 9 and 18."
+
   psharedbcidr:
     Type: String
     Default: 10.20.4.0/22
+    Description: "CIDR block for the shared subnet B"
+    MinLength: 9
+    MaxLength: 18
+    AllowedPattern: "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})"
+    ConstraintDescription: "CIDR block must be in the format xxx.xxx.xxx.xxx/xx and have a length between 9 and 18."
+
 Resources:
   VPC:
     Type: "AWS::EC2::VPC"
@@ -18,8 +36,16 @@ Resources:
     Type: "AWS::EC2::InternetGateway"
   S3AppBucket:
     Type: "AWS::S3::Bucket"
+    DeletionPolicy: Retain
     Properties:
-      AccessControl: PublicRead
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+      OwnershipControls:
+        Rules:
+        - ObjectOwnership: BucketOwnerPreferred
+      AccessControl: AwsExecRead
       WebsiteConfiguration:
         ErrorDocument: index.html
         IndexDocument: index.html
@@ -118,3 +144,21 @@ Resources:
     Properties:
       AllocationId: !GetAtt EIPNatGWB.AllocationId
       SubnetId: !Ref SubnetPublicSharedB
+
+Outputs:
+# App VPC
+  VpcId:
+    Description: "VPC ID"
+    Value: !Ref VPC
+# NAT A
+  NatGatewayA:
+    Description: "NAT Gateway A"
+    Value: !Ref NatGatewayA
+# NAT B
+  NatGatewayB:
+    Description: "NAT Gateway B"
+    Value: !Ref NatGatewayB
+# AppBucketURL
+  AppBucketURL:
+    Description: "App Bucket URL"
+    Value: !GetAtt S3AppBucket.WebsiteURL
